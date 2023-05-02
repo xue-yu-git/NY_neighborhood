@@ -1,0 +1,11 @@
+{
+    "preferences": {
+        "accessbility": "float",
+        "safety": "float",
+        "affordability": "float"
+    },
+    "price_range_filter": {
+        "low": "float",
+        "high": "float"
+    }
+}

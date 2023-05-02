@@ -1,0 +1,55 @@
+{
+    "results": [
+        {
+            "zipcode": "string",
+            "total_score": "float",
+            "affordability": {
+                "score": "float",
+                "percentile": "float"
+            },
+            "safety": {
+                "score": "float",
+                "percentile": "float"
+            },
+            "accessibility": {
+                "score": "float",
+                "percentile": "float"
+            },
+            "median_income": {
+                "score": "float",
+                "percentile": "float"
+            },
+            "price_chart_data": [
+                {
+                    "range": ["float", "float"],
+                    "label": "string",
+                    "count": "integer"
+                }
+            ],
+            "incidents": {
+                "felony": "integer",
+                "misdemeanor": "integer",
+                "violation": "integer"
+            }
+        }
+    ],
+    "distributions": {
+        "affordability": {
+            "min": "float",
+            "max": "float"
+        },
+        "safety": {
+            "min": "float",
+            "max": "float"
+        },
+        "accessibility": {
+            "min": "float",
+            "max": "float"
+        },
+        "safety_averages": {
+            "felony": "float",
+            "misdemeanor": "float",
+            "violation": "float"
+        }
+    }
+}

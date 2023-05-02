@@ -1,0 +1,267 @@
+<html>
+
+<head>
+    <title>Neighborhood Search</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <!-- import required libraries here -->
+    <script type="text/javascript" src="static/lib/leaflet.js"></script>
+    <script type="text/javascript" src="static/lib/d3.v5.min.js"></script>
+    <script type="text/javascript" src="static/lib/d3-dsv.min.js"></script>
+    <script type="text/javascript" src="static/lib/d3-geo-projection.v2.min.js"></script>
+    <script type="text/javascript" src="static/lib/d3-tip.min.js"></script>
+    <script type="text/javascript" src="static/lib/leaflet.ajax.min.js"></script>
+    <link rel="stylesheet" href="static/css/leaflet.css" />
+    <link rel="stylesheet" href="static/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="static/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="static/style.css" />
+    <script src="static/lib/leaflet-pip.js"></script>
+
+    <style>
+        /* define CSS rules here */
+    </style>
+
+</head>
+
+<body onload="main();">
+    <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <div class="navbar-icon-container align-items-center">
+                    <a href="#" class="navbar-icon pull-right visible-xs" id="nav-btn"><i
+                            class="fa fa-bars fa-lg white"></i></a>
+                    <a href="#" class="navbar-icon pull-right visible-xs" id="sidebar-toggle-btn"><i
+                            class="fa fa-search fa-lg white"></i></a>
+                </div>
+                <a class="navbar-brand text-center" href="#">Neighborhood Search</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="spinner"></div>
+
+    <div id="container">
+        <div class="row" style="padding-bottom:0px">
+            <!-- <div class="col-md-2"></div> -->
+            <div class="col-md-12">
+                <div class="alert alert-info alert-dismissible" role="alert" style="margin-bottom: 0px">
+                    <h4><b>How to use:</b></h4>
+                    Please input your preferences for Affordability, Safety and Accesibility attributes (out of 100) and click Submit in Preferences Input pane to generate custom Neighborhood rankings. The Total scores and Rankings are generated based on your submitted preferences. Price filter helps you analyse listings suitable to your budget.
+                    <br/>
+                    <br />
+                    For example, Affordability = 100, Safety = 25 and Accessibility = 50 would set the highest preference for Affordability, followed by Accesibility and Safety as the least preferred attribute.
+                    Preference of 20 for each attribute would be the same as preference of 50 or 100 each i.e. each attribute is equally weighted.
+                    <br />
+                    <br />
+                    The individual scores are calculated as:
+
+                    <ul>
+                        <li>
+                            <b>Affordability</b>: Price per square feet of living area of the listed property.
+                        </li>
+                        <li>
+                            <b>Accessibility</b>: Average of <a href="https://www.walkscore.com/methodology.shtml">Walk Score</a> and <a href="https://www.walkscore.com/transit-score-methodology.shtml">Transit Score</a>.
+                        </li>
+                        <li>
+                            <b>Crime rate</b>: Weighted average of counts of Felony, Demeanor and Violations reported in NYC crime dataset per 1000 residents from 2018 to 2022.
+                        </li>
+                    </ul>
+                    <br />
+                    Single click on the zip code in map or Top 10 Neighborhoods in the Results pane displays additional details and analysis for the zip code.
+                </div>
+            </div>
+            <!-- <div class="col-md-2"></div> -->
+        </div>
+        <div class="row">
+            <div class="sidebar col-md-2">
+                <div class="sidebar-wrapper left">
+                    <div class="navi">
+                        <ul class="nav nav-tabs">
+                            <li class="active input-tab-link"><a href="#" onclick="switchToInputTab(event)">Preferences
+                                    Input</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="panel panel-default" id="features">
+                        <div class="panel-body">
+                            <div class="row input-tab">
+                                <form>
+                                    <div class="form-group">
+                                        <label for="affordability_input">Affordability</label>
+                                        <input type="number" class="form-control" min="1" max="100"
+                                            id="affordability_input" placeholder="33.34%" value="33.33">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="safety_input">Safety</label>
+                                        <input type="number" class="form-control" min="1" max="100" id="safety_input"
+                                            placeholder="33.33%" value="33.33">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="accessibility_input">Accessibility</label>
+                                        <input type="number" class="form-control" min="1" max="100"
+                                            id="accessibility_input" placeholder="33.33%" value="33.33">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="fromSlider" style="margin-bottom: 10px">Price Range</label>
+                                        <input id="fromSlider" type="range" value="180000" min="100000" max="2000000" />
+                                        <input id="toSlider" class="" type="range" value="1000000" min="100000"
+                                            max="2000000" />
+                                    </div>
+                                    <div class="form-group" class="smaller">
+                                        <label for="fromInput" class="smaller">Min ($)</label>
+                                        <input class="form-control smaller form_control_container__time__input"
+                                            type="number" id="fromInput" value="180000" step="10000" min="100000" max="2000000" />
+                                        <label for="toInput" class="smaller">Max ($)</label>
+                                        <input class="form-control smaller form_control_container__time__input"
+                                            type="number" id="toInput" value="1000000" step="10000" min="100000" max="2000000" />
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary submit-btn">Submit</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div id="map" class="col-md-8"></div>
+            <div id="statistics" class="sidebar col-md-2">
+                <div class="sidebar-wrapper right">
+                    <div class="navi">
+                        <ul class="nav nav-tabs">
+                            <li class="active results-tab-link"><a href="#"
+                                    onclick="switchToInputTab(event)">Results</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="panel panel-default" id="features">
+                        <div class="panel-body">
+                            <div class="row results-tab">
+                                <h4 style="margin-top: 0px; margin-bottom: 0px">Legend (Score)</h4>
+                                <div id="legend">
+                                </div>
+
+                                <h4 style="margin-top: 20px;">
+                                    Top 10 Neighborhoods
+                                </h4>
+                                <table id="results" class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">ZIP Code</th>
+                                            <th scope="col">Total score</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="results_body">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="text-center" style="margin-bottom: 5%;">
+                <a id="search_link" href="" target="_blank" class="btn btn-primary"></a>
+            </div>
+        </div>
+
+        <div class="row" style="margin-bottom: 50px;">
+            <div class="col-md-2"></div>
+            <div class="col-md-4" style="margin-left: 0%;">
+                <div class="text-center" id="abc2">
+                    <h4 style="padding-left: 10%;" id="incidents_chart_title"></h4>
+                    <div id="incidents_chart">
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4" style="max-width: 450px; padding-left: 8%; padding-right: 1%;">
+                <div class="text-center">
+                    <h4 id="percentile_scores_title">Percentile Scores</h4>
+                </div>
+                <div style="margin-top: 10%">
+                    <div class="form-group percentile_squares" class="smaller">
+                        <label for="percentile_squares_1">Price per sq.ft.: </label>
+                        <span id="percentile_squares_1_val" class="bold"></span>
+                        <br />
+                        <span class="pull-left min_max_labels smaller" id="percentile_squares_1_min">1</span>
+                        <span class="pull-right min_max_labels smaller" id="percentile_squares_1_max">2</span>
+                        <input class="form-control smaller" type="range" id="percentile_squares_1" value="56" min="1"
+                            max="100" disabled />
+                    </div>
+                    <div class="form-group percentile_squares" class="smaller">
+                        <label for="percentile_squares_2">Accessibility Score: </label>
+                        <span id="percentile_squares_2_val" class="bold"></span>
+
+                        <br />
+                        <span class="pull-left min_max_labels smaller" id="percentile_squares_2_min">1</span>
+                        <span class="pull-right min_max_labels smaller" id="percentile_squares_2_max">2</span>
+
+                        <input class="form-control smaller" type="range" id="percentile_squares_2" value="23" min="1"
+                            max="100" disabled />
+                    </div>
+                    <div class="form-group percentile_squares" class="smaller">
+                        <label for="percentile_squares_3">Crime Score: </label>
+                        <span id="percentile_squares_3_val" class="bold"></span>
+
+                        <br />
+                        <span class="pull-left min_max_labels smaller" id="percentile_squares_3_min">1</span>
+                        <span class="pull-right min_max_labels smaller" id="percentile_squares_3_max">2</span>
+
+                        <input class="form-control smaller" type="range" id="percentile_squares_3" value="77" min="1"
+                            max="100" disabled />
+                    </div>
+                    <div class="form-group percentile_squares" class="smaller">
+                        <label for="percentile_squares_4">Median Income: </label>
+                        <span id="percentile_squares_4_val" class="bold"></span>
+
+                        <br />
+                        <span class="pull-left min_max_labels smaller" id="percentile_squares_4_min">1</span>
+                        <span class="pull-right min_max_labels smaller" id="percentile_squares_4_max">2</span>
+
+                        <input class="form-control smaller" type="range" id="percentile_squares_4" value="77" min="1"
+                            max="100" disabled />
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2"></div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-2"></div>
+            <div class="col-md-8">
+                <div class="text-center" id="abc">
+                    <h4 style="padding-left: 10%;" id="housing_price_chart_title"></h4>
+                    <div id="price_distribution_chart">
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2"></div>
+        </div>
+
+        <div class="row" style="margin-top: 3%">
+            <div class="col-md-2"></div>
+            <div class="col-md-8">
+                <div class="text-center" id="abc3" style="min-height: 400px;">
+                    <h4 style="padding-left: 10%;" id="scatter_distribution_chart_title"></h4>
+                    <div id="scatter_distribution_chart">
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2"></div>
+        </div>
+
+    </div>
+    </div>
+
+    <script src="static/lib/jquery.min.js"></script>
+    <script src="static/lib/bootstrap.min.js"></script>
+    <script src="static/index.js"></script>
+</body>
+
+</html>
